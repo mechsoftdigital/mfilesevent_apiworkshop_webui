@@ -212,6 +212,84 @@ var sendClicked  = function (e) {
 
         return requestBody;
     };
+    
+    var createGDPRRequest = function(inputValues){
+        var requestBody =  {
+            PropertyValues : [],
+            Files : []
+        }
+
+        //Add properties
+        requestBody.PropertyValues.push({
+            PropertyDef: 100,
+            TypedValue : {
+                DataType:9,
+                Lookup: {
+                    Item : mfConfig.requestClass,
+                    Version: -1
+                }
+            }
+        })
+
+        requestBody.PropertyValues.push({
+            PropertyDef : 38,
+            TypedValue: {
+                DataType : 9,
+                Lookup : {
+                    Item : mfConfig.requestWorkflow,
+                    Version: -1
+                }
+            }
+        })
+
+        requestBody.PropertyValues.push({
+            PropertyDef : 39,
+            TypedValue: {
+                DataType : 9,
+                Lookup : {
+                    Item : mfConfig.requestState,
+                    Version: -1
+                }
+            }
+        })
+
+        //Add description
+        requestBody.PropertyValues.push({
+            PropertyDef: mfConfig.descriptionProp,
+            TypedValue: {
+                DataType: 13,
+                Value: inputValues.description
+            }
+        });
+
+
+        //Add contact
+        requestBody.PropertyValues.push({
+            PropertyDef : mfConfig.requestedByProp,
+            TypedValue: {
+                DataType : 9,
+                Lookup : {
+                    Item : inputValues.contactId,
+                    Version: -1
+                }
+            }
+        })
+
+
+        //Add request Type
+        requestBody.PropertyValues.push({
+            PropertyDef : mfConfig.requestTypeProp,
+            TypedValue: {
+                DataType : 9,
+                Lookup : {
+                    Item : inputValues.requestType,
+                    Version: -1
+                }
+            }
+        })
+
+        return requestBody;
+    };
 
 
     getToken().then(token => {
@@ -268,7 +346,37 @@ var sendClicked  = function (e) {
                 contactObjectVersion = response.Items[0];
             }
             
-            //TODO: Create GDPR Request
+            //Create GDPR Request
+            var gdprRequestValues = {
+                contactId : contactObjectVersion.ObjVer.ID,
+                description : formValues.description
+
+            }
+
+            //Define requestType
+            if (formValues.requestType == 1){
+                gdprRequestValues.requestType = 3
+            }
+            else {
+                gdprRequestValues.requestType = 2;
+            }
+
+            var gdprRequest = createGDPRRequest(gdprRequestValues);
+
+            console.log("Creating GDPR Request.");
+
+            sendRequest(tokenValue, gdprRequest, "/objects/" +mfConfig.requestObjectType + ".aspx?checkIn=true", "post").then(response => {
+
+                if ("Exception" in response){
+                    alert(response.Message);
+                    console.log(response);
+                    return;
+                }
+                console.log("Request created.");
+                console.log(response);
+
+                $.unblockUI();
+            });
 
         });
 
