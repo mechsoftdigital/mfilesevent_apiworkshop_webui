@@ -47,3 +47,16 @@ if (footerText !== null && footerText !== 'undefined') {
     footerText.innerHTML = footerText.innerHTML.replace(domPlaceHolders.companyName, "Mechsoft");
     footerText.innerHTML = footerText.innerHTML.replace(domPlaceHolders.date, new Date().toLocaleDateString());
 }
+
+
+//Define Click Event
+var sendClicked  = function (e) {
+
+    //Prevent default button click
+    e.preventDefault();
+    
+    //TODO: Validation of Input Values
+};
+
+
+document.querySelector(domObjects.sendButton).addEventListener('click', sendClicked);
