@@ -94,7 +94,7 @@ var sendClicked  = function (e) {
             .then((result) => {return  result;})
             .catch(function(error) { console.log(error); alert("Hata !");});
     };
-    
+
     var sendRequest = async function (token, jsonBody, path, requestType) {
 
         var request = {
@@ -125,6 +125,95 @@ var sendClicked  = function (e) {
         });
     };
 
+    var createContact = function(contactValues){
+        var requestBody =  {
+            PropertyValues : [],
+            Files : []
+        }
+
+        //Add class
+        requestBody.PropertyValues.push({
+            PropertyDef: 100,
+            TypedValue : {
+                DataType:9,
+                Lookup: {
+                    Item : mfConfig.otherContactClass,
+                    Version: -1
+                }
+            }
+        })
+
+        //Split names and last names
+
+        var allword = contactValues.name.split(' ');
+        var firstName = "";
+        var lastName = "";
+
+        for (var i=0; i < allword.length; i++){
+            if (i != allword.length -1){
+                firstName = firstName + " " + allword[i];
+            }
+            else {
+                lastName = allword[i];
+            }
+
+        }
+
+        //Add firstname
+        requestBody.PropertyValues.push({
+            PropertyDef: mfConfig.nameProp,
+            TypedValue: {
+                DataType: 1,
+                Value: firstName
+            }
+        });
+
+        //Add lastname
+        requestBody.PropertyValues.push({
+            PropertyDef: mfConfig.lastNameProp,
+            TypedValue: {
+                DataType: 1,
+                Value: lastName
+            }
+        });
+
+        //Add identity
+        requestBody.PropertyValues.push({
+            PropertyDef: mfConfig.IdentityNoProp,
+            TypedValue: {
+                DataType: 1,
+                Value: contactValues.identity
+            }
+        });
+
+        //Add workflow
+        requestBody.PropertyValues.push({
+            PropertyDef: 38,
+            TypedValue : {
+                DataType:9,
+                Lookup: {
+                    Item : mfConfig.statusWorkflow,
+                    Version: -1
+                }
+            }
+        })
+
+        //Add state
+        requestBody.PropertyValues.push({
+            PropertyDef: 39,
+            TypedValue : {
+                DataType:9,
+                Lookup: {
+                    Item : mfConfig.statusState,
+                    Version: -1
+                }
+            }
+        })
+
+        return requestBody;
+    };
+
+
     getToken().then(token => {
         if ("Exception" in token){
             $.unblockUI();
@@ -138,7 +227,7 @@ var sendClicked  = function (e) {
         console.log(token);
 
         var tokenValue = token.Value;
-        
+
         //Query Identity
         sendRequest(tokenValue, null, "/objects/"+mfConfig.contactObjectType+"?p"+mfConfig.IdentityNoProp+"=" + formValues.identity, "get").then(response => {
             if ("Exception" in response){
@@ -148,9 +237,39 @@ var sendClicked  = function (e) {
             }
             console.log("Query completed.");
             console.log(response);
-        
-        //TODO: Check Query Result and create contact if not found.
-        
+
+            var contactObjectVersion;
+
+
+            if (response.Items.length == 0){
+
+                //No contact found with identity create contact.
+
+                console.log("Contact not found. Creating new contact.");
+
+                contact = createContact(formValues);
+
+                sendRequest(tokenValue, contact, "/objects/" +mfConfig.contactObjectType + ".aspx?checkIn=true", "post").then(response => {
+                    if ("Exception" in response){
+                        alert(response.Message);
+                        console.log(response);
+                        return;
+                    }
+                    console.log("Contact Created.");
+                    console.log(response);
+                    contactObjectVersion = response;
+                });
+
+            } else {
+
+                //Contact found with given Identity use it.
+
+                console.log("Found contact with Identity.");
+                contactObjectVersion = response.Items[0];
+            }
+            
+            //TODO: Create GDPR Request
+
         });
 
 
