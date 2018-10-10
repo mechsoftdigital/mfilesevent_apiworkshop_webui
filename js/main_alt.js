@@ -77,7 +77,39 @@ var sendClicked  = function (e) {
         return;
     }
     
-    //TODO: BlockUI and Call M-Files REST API for token
+     $.blockUI();
+
+    var getToken = async function(){
+        return fetch(connectionInfo.restPath +  '/server/authenticationtokens', {
+            method: 'post',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },        
+            body: JSON.stringify({Username: connectionInfo.userName, Password: connectionInfo.password, VaultGuid: connectionInfo.vaultGuid}),
+            mode: 'cors', // no-cors, cors, *same-origin
+            redirect: 'follow', // manual, *follow, error
+            referrer: 'no-referrer' })
+            .then((response) => { return response.json(); })
+            .then((result) => {return  result;})
+            .catch(function(error) { console.log(error); alert("Hata !");});
+    };
+    
+     getToken().then(token => {
+        if ("Exception" in token){
+             $.unblockUI();
+            alert(token.Message);
+            console.log(response);
+           
+            return;
+        }
+
+        console.log("Captured token.");
+        console.log(token);
+     });
+    
+    $.unblockUI();
+
 };
 
 
