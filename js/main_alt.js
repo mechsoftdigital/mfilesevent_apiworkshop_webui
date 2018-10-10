@@ -54,7 +54,7 @@ var sendClicked  = function (e) {
 
     //Prevent default button click
     e.preventDefault();
-    
+
     //Get form values
     var formValues = {
         name : document.querySelector(domObjects.nameInput).value,
@@ -62,7 +62,7 @@ var sendClicked  = function (e) {
         requestType : document.querySelector(domObjects.requestTypeInput).value,
         description : document.querySelector(domObjects.descInput).value
     };
-    
+
     console.log(formValues);
 
     //Validate required fields.
@@ -76,8 +76,8 @@ var sendClicked  = function (e) {
         alert("TC Kimlik No / VKN alanı minimum 10 maksimum 11 haneli olmalıdır.");
         return;
     }
-    
-     $.blockUI();
+
+    $.blockUI();
 
     var getToken = async function(){
         return fetch(connectionInfo.restPath +  '/server/authenticationtokens', {
@@ -95,19 +95,67 @@ var sendClicked  = function (e) {
             .catch(function(error) { console.log(error); alert("Hata !");});
     };
     
-     getToken().then(token => {
+    var sendRequest = async function (token, jsonBody, path, requestType) {
+
+        var request = {
+            method: requestType,
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Authentication' : token
+            },        
+
+            mode: 'cors', // no-cors, cors, *same-origin
+            redirect: 'follow', // manual, *follow, error
+            referrer: 'no-referrer' // *client, no-referrer
+        }
+
+        if (requestType == 'post' && (jsonBody !== null || jsonBody !== 'undefined')){
+            request.body = JSON.stringify(jsonBody);
+        }
+
+        return fetch(connectionInfo.restPath +  path, request)
+            .then((response) => { 
+            return response.json(); 
+        })
+            .then((result) => {
+            return result;
+        }).catch(function(error) {
+            console.log(error);
+        });
+    };
+
+    getToken().then(token => {
         if ("Exception" in token){
-             $.unblockUI();
+            $.unblockUI();
             alert(token.Message);
             console.log(response);
-           
+
             return;
         }
 
         console.log("Captured token.");
         console.log(token);
-     });
-    
+
+        var tokenValue = token.Value;
+        
+        //Query Identity
+        sendRequest(tokenValue, null, "/objects/"+mfConfig.contactObjectType+"?p"+mfConfig.IdentityNoProp+"=" + formValues.identity, "get").then(response => {
+            if ("Exception" in response){
+                alert(response.Message);
+                console.log(response);
+                return;
+            }
+            console.log("Query completed.");
+            console.log(response);
+        
+        //TODO: Check Query Result and create contact if not found.
+        
+        });
+
+
+    });
+
     $.unblockUI();
 
 };
