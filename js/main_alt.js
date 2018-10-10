@@ -55,7 +55,29 @@ var sendClicked  = function (e) {
     //Prevent default button click
     e.preventDefault();
     
-    //TODO: Validation of Input Values
+    //Get form values
+    var formValues = {
+        name : document.querySelector(domObjects.nameInput).value,
+        identity: document.querySelector(domObjects.identityInput).value,
+        requestType : document.querySelector(domObjects.requestTypeInput).value,
+        description : document.querySelector(domObjects.descInput).value
+    };
+    
+    console.log(formValues);
+
+    //Validate required fields.
+    if (formValues.name.trim() === "" || formValues.identity.trim() === "" || formValues.description === "") {
+        alert("Lütfen tüm alanları doldurunuz."); 
+        return;
+    }
+
+    //Validate Identity fields.
+    if (formValues.identity.length < 10 || formValues.identity.length > 11) {
+        alert("TC Kimlik No / VKN alanı minimum 10 maksimum 11 haneli olmalıdır.");
+        return;
+    }
+    
+    //TODO: BlockUI and Call M-Files REST API for token
 };
 
 
